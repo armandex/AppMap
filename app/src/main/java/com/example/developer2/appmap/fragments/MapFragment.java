@@ -83,7 +83,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     private Date fecha;
 
     private static final int UPDATE_INTERVAL = 5000;
-    private static final int FASTEST_INTERVAL = 9000000;
+    private static final int FASTEST_INTERVAL = 5000;
     private static final int DISTANCE = 0;
     private static int CONTEO = 0;
     private static int contador = 0;
@@ -132,21 +132,13 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         gMap = googleMap;
         mLocationManager = (LocationManager) getContext().getSystemService(LOCATION_SERVICE);
 
-        LatLng place = new LatLng(-12.083926855230494, -77.03837856355938);
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(place)
-                .zoom(15)               //limit 21
-                //.bearing(0)             //0 - 360°
-                //.tilt(90)               //limit 90
-                .build();
-        gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-        buttonMyPosition();
         //Check location permission for sdk >= 23
         if (Build.VERSION.SDK_INT >= 23) {
 
             if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
-                //gMap.getUiSettings().setMyLocationButtonEnabled(false);//esto bloquea el boton de ir a la posicion actual
+                buttonMyPosition();
+                gMap.getUiSettings().setMyLocationButtonEnabled(false);//esto bloquea el boton de ir a la posicion actual
                 mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_INTERVAL, DISTANCE, new LocationListener() {
 
 
@@ -168,7 +160,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                         gMap.moveCamera(CameraUpdateFactory.newLatLng(place));
                         CameraPosition cameraPosition = new CameraPosition.Builder()
                                 .target(place)
-                                .zoom(15)               //limit 21
+                                .zoom(18)               //limit 21
                                 //.bearing(0)             //0 - 360°
                                 //.tilt(90)               //limit 90
                                 .build();
@@ -266,40 +258,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
             }
         });
     }
-    //buildGoogleApiClient();
-    //gMap.setMyLocationEnabled(true);
 
-        /*setUpMapIfNeeded();
-        startTracking();
-        gMap.getUiSettings().setMyLocationButtonEnabled(true);*/
-
-
-    /*CameraUpdate zoom = CameraUpdateFactory.zoomTo(15);
-
-    LatLng place = new LatLng(-12.08385189873338, -77.03732140449227);
-    marker = new MarkerOptions();
-    marker.position(place);
-    marker.title("Mi marcador");
-    marker.draggable(true);
-    marker.snippet("Esto es una cajad e texto");
-    marker.icon(BitmapDescriptorFactory.fromResource(android.R.drawable.star_on));
-
-    gMap.addMarker(marker);
-    //gMap.addMarker(new MarkerOptions().position(place).title("Hola desde OL").draggable(true));
-    gMap.moveCamera(CameraUpdateFactory.newLatLng(place));
-    CameraPosition cameraPosition = new CameraPosition.Builder()
-            .target(place)
-            .zoom(18)               //limit 21
-            .bearing(0)             //0 - 360°
-            .tilt(90)               //limit 90
-            .build();
-    gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-    gMap.animateCamera(zoom);
-    gMap.setOnMarkerDragListener((GoogleMap.OnMarkerDragListener) this);
-
-    geocoder = new Geocoder(getContext(), Locale.getDefault());
-    */
-    //}
     private void showInfoAlert() {
         new AlertDialog.Builder(getContext())
                 .setTitle("GPS Signal")
@@ -313,111 +272,18 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                 }).setNegativeButton("CANCEL", null).show();
     }
 
-    private void startTracking() {
-        Log.d(TAG, "startTracking");
-
-        // if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS) {
-
-        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
-
-        if (!mGoogleApiClient.isConnected() || !mGoogleApiClient.isConnecting()) {
-            mGoogleApiClient.connect();
-        }
-        //} else {
-        //    Log.e(TAG, "unable to connect to google play services.");
-        //}
-    }
-
-    protected synchronized void buildGoogleApiClient() {
-        Log.i(TAG, "Building GoogleApiClient");
-        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-        mGoogleApiClient.connect();
-        //createLocationRequest();
-
-    }
-    /*@Override
-    public void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
-    }*/
-//    @Override
-//    public void onResume() {
-//        super.onResume();
-    // Within {@code onPause()}, we pause location updates, but leave the
-    // connection to GoogleApiClient intact.  Here, we resume receiving
-    // location updates if the user has requested them.
-
-        /*if (mGoogleApiClient.isConnected()) {
-            startLocationUpdates();
-        }*/
-//    }
-    /*protected void startLocationUpdates() {
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,mLocationRequest,this);
-    }*/
-
-//    private void createLocationRequest(){
-//        mLocationRequest = new LocationRequest();
-//        mLocationRequest.setInterval(UPDATE_INTERVAL);
-//        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
-//        mLocationRequest.setSmallestDisplacement(DISTANCE);
-//        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-    /*try {
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-    } catch (SecurityException se) {
-        Log.e(TAG, "Go into settings and find Gps Tracker app and enable Location.");
-    }*/
-        /*gMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
-
-
-            @Override
-            public void onMyLocationChange(Location location) {
-                // TODO Auto-generated method stub
-                CONTEO = UPDATE_INTERVAL + contador;
-                contador = UPDATE_INTERVAL;
-                //gMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("It's Me!"));
-                //Toast.makeText(getContext(),"C: "+CONTEO+" - "+"Lat: "+location.getLatitude()+"- "+"Lon: "+location.getLongitude(),Toast.LENGTH_SHORT).show();
-            }
-        });*/
-    //}
-    //LocationListener
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
-            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-            gMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-            gMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+            //LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            //gMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+            //gMap.animateCamera(CameraUpdateFactory.zoomTo(11));
             // we have our desired accuracy of 500 meters so lets quit this service,
             // onDestroy will be called and stop our location uodates
 
         }
     }
 
-    private void setUpMapIfNeeded() {
-        // Do a null check to confirm that we have not already instantiated the map.
-        if (gMap != null) {
-            // Try to obtain the map from the SupportMapFragment.
-
-            gMap.setMyLocationEnabled(true);
-            // Check if we were successful in obtaining the map.
-            if (gMap != null) {
-
-                //createLocationRequest();
-
-            }
-        }
-    }
-
-    private void sendLocationDataToWebsite(Location location) {
-
-    }
 
 
     private Boolean isGPSEnabled() {
@@ -467,11 +333,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         }
     }
 
-    /*@Override
-    public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
-    }*/
-
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.i(TAG, "Connected to GoogleApiClient");
@@ -493,8 +354,8 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                     // TODO Auto-generated method stub
                     CONTEO = UPDATE_INTERVAL + contador;
                     contador = UPDATE_INTERVAL;
-                    //gMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("It's Me!"));
-                    //Toast.makeText(getContext(),"C: "+CONTEO+" - "+"Lat: "+location.getLatitude()+"- "+"Lon: "+location.getLongitude(),Toast.LENGTH_SHORT).show();
+                    gMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("It's Me!"));
+                    Toast.makeText(getContext(),"C: "+CONTEO+" - "+"Lat: "+location.getLatitude()+"- "+"Lon: "+location.getLongitude(),Toast.LENGTH_SHORT).show();
                 }
             });
         }
