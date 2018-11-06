@@ -94,7 +94,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     private TemplatePDF templatePDF;
     private String[] header = {"fecha", "latitud", "longitud"};
     private String shortText = "Hola";
-    private String longText = "Nunca consideré el estudio como una obligación, sino como una oportunidad";
+    private String longText = "Nunca consideré el estudio como una obligación, sino como una oportunidad :D";
     private String titulo = null;
     private String snipet = null;
     static int count = 1;
