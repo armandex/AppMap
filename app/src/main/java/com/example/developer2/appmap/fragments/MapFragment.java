@@ -92,7 +92,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     private static int contador = 0;
     private static final String TAG = "LocationService";
     private TemplatePDF templatePDF;
-    private String[] header = {"fecha", "latitud", "longitud"};
+    private String[] header = {"id", "latitud", "longitud", "fecha", "idGrupo"};
     private String shortText = "Hola";
     private String longText = "Nunca consideré el estudio como una obligación, sino como una oportunidad :D";
     private String titulo = null;
@@ -142,76 +142,72 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
 
             if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
-                buttonMyPosition();
-                marcadores = listarMarkadores();
-                for (int i = 0; i < listarMarkadores().size(); i++) {
-                    LatLng posicion = new LatLng(marcadores.get(i).getLatitud(), marcadores.get(i).getLongitud());
-                    titulo = marcadores.get(i).getTitulo();
-                    snipet = marcadores.get(i).getDetalle();
-                    gMap.addMarker(new MarkerOptions().position(posicion).title(titulo).draggable(false).snippet(snipet).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_marker)));
+                try {
+                    buttonMyPosition();
+                    administradorDeLocaciones(gMap);
+                } catch (Exception ex) {
+                    Toast.makeText(getContext(), "error" + ex, Toast.LENGTH_SHORT).show();
                 }
+
                 //gMap.getUiSettings().setMyLocationButtonEnabled(false);//esto bloquea el boton de ir a la posicion actual
-                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_INTERVAL, DISTANCE, new LocationListener() {
-
-
-                    @Override
-                    public void onLocationChanged(Location location) {
-                        fecha = calcularFecha(location);
-                        Location myLocation = googleMap.getMyLocation();
-                        LatLng myLatLng = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-                        LatLng place = new LatLng(myLatLng.latitude, myLatLng.longitude);
-                        marker = new MarkerOptions();
-                        marker.position(place);
-                        marker.title("Mi marcador");
-                        marker.draggable(true);
-                        marker.snippet("Hola soy Armando");
-
-                        gMap.addMarker(marker);
-                        //gMap.addMarker(new MarkerOptions().position(place).title("Hola desde OL").draggable(true));
-                        //gMap.moveCamera(CameraUpdateFactory.newLatLng(place));
-                        //CameraPosition cameraPosition = new CameraPosition.Builder()
-                        //.target(place)
-                        //.zoom(18)               //limit 21
-                        //.bearing(0)             //0 - 360°
-                        //.tilt(90)               //limit 90
-                        //.build();
-                        //gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                        //gMap.setOnMarkerDragListener((GoogleMap.OnMarkerDragListener) this);
-
-
-                        if (location != null) {
-                            alta(contador, myLatLng.latitude, myLatLng.longitude, fecha);
-                            Toast.makeText(getContext(), "Fecha: " + fecha + "Lat: " + myLatLng.latitude + " - " + "Lon: " + myLatLng.longitude + "Contador: " + contador, Toast.LENGTH_SHORT).show();
-                        }
-                        contador++;
-                    }
-
-                    @Override
-                    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-                    }
-
-                    @Override
-                    public void onProviderEnabled(String provider) {
-
-                    }
-
-                    @Override
-                    public void onProviderDisabled(String provider) {
-
-                    }
-                });
-
             }
-            /*Location myLocation = googleMap.getMyLocation();
-            LatLng myLatLng = new LatLng(myLocation.getLatitude(),
-                    myLocation.getLongitude());
-            Toast.makeText(getContext(), "Lat: " + myLatLng.latitude + " - " + "Lon: " + myLatLng.longitude, Toast.LENGTH_SHORT).show();*/
-
         } else {
-            buttonMyPosition();
+            try {
+                buttonMyPosition();
+                administradorDeLocaciones(gMap);
+            } catch (Exception ex) {
+                Toast.makeText(getContext(), "error" + ex, Toast.LENGTH_SHORT).show();
+            }
+
         }
 
+    }
+
+    public void administradorDeLocaciones(final GoogleMap googleMap) {
+
+        marcadores = listarMarkadores();
+        for (int i = 0; i < listarMarkadores().size(); i++) {
+            LatLng posicion = new LatLng(marcadores.get(i).getLatitud(), marcadores.get(i).getLongitud());
+            titulo = marcadores.get(i).getTitulo();
+            snipet = marcadores.get(i).getDetalle();
+            gMap.addMarker(new MarkerOptions().position(posicion).title(titulo).draggable(false).snippet(snipet).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_marker)));
+        }
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_INTERVAL, DISTANCE, new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                if (location != null && googleMap != null) {
+                    fecha = calcularFecha(location);
+                    Location myLocation = googleMap.getMyLocation();
+                    LatLng myLatLng = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
+                    LatLng place = new LatLng(myLatLng.latitude, myLatLng.longitude);
+                    marker = new MarkerOptions();
+                    marker.position(place);
+                    marker.title("Mi marcador");
+                    marker.draggable(true);
+                    marker.snippet("Hola soy Armando");
+                    //gMap.addMarker(marker);
+
+                    registrarEnSqlite(consulta().size()+1, myLatLng.latitude, myLatLng.longitude, fecha);
+                    Toast.makeText(getContext(), "Fecha: " + fecha + "Lat: " + myLatLng.latitude + " - " + "Lon: " + myLatLng.longitude + "Contador: " + contador, Toast.LENGTH_SHORT).show();
+                }
+                contador++;
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        });
     }
 
     public List<Marcadores> listarMarkadores() {
@@ -222,9 +218,8 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         return lista;
     }
 
-    public void alta(int idPersona, double latitud, double longitud, Date fecha) {
+    public void registrarEnSqlite(int idPersona, double latitud, double longitud, Date fecha) {
         AdminSQLiteOpenHelper admin = new AdminSQLiteOpenHelper(getContext(), "administracion", null, 1);
-
         SQLiteDatabase bd = admin.getWritableDatabase();
         int idP = idPersona;
         double lat = latitud;
@@ -248,8 +243,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
 
     }
 
-    // Hacemos búsqueda de todos los usuarios
-    public List<String[]> consulta() {
+    public List<String[]> consulta() {// Hacemos búsqueda de todos los usuarios-registros
         registros = new ArrayList();
         ArrayList<String[]> rows = new ArrayList<>();
 
@@ -259,15 +253,13 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         Cursor fila = bd.rawQuery("select * from usuario", null);
         if (fila.getCount() > 0) {
             Toast.makeText(getContext(), "exito", Toast.LENGTH_SHORT).show();
-            while (fila.moveToNext()){
-                rows.add(new String[]{fila.getString(0),fila.getString(1), fila.getString(2)});
-                //registros.add(new Registro(fila.getInt(0), fila.getDouble(1), fila.getDouble(2)));
-                //Toast.makeText(getContext(), "dato1"+fila.getString(0)+"dato2: "+fila.getString(1)+"dato3:" +fila.getString(2), Toast.LENGTH_SHORT).show();
+            while (fila.moveToNext()) {
+                rows.add(new String[]{fila.getString(0),
+                        fila.getString(1),
+                        fila.getString(2),
+                        fila.getString(3),
+                        fila.getString(4)});
             }
-            //if (fila.moveToFirst()) {
-                //registros.add(new Registro(fila.getInt(0), fila.getDouble(1), fila.getDouble(2)));
-
-            //}
         } else
             Toast.makeText(getContext(), "error", Toast.LENGTH_SHORT).show();
         bd.close();
@@ -302,23 +294,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
 
     public void pdfView() {
         templatePDF.viewPDF();
-    }
-
-    private ArrayList<String[]> getClients() {
-        ArrayList<String[]> rows = new ArrayList<>();
-        rows.add(new String[]{"1", "Armando", "Aguinaga"});
-        rows.add(new String[]{"2", "Sofia", "Hernandez"});
-        rows.add(new String[]{"3", "Naomi", "Alfaro"});
-        rows.add(new String[]{"4", "Lorena", "Canedo"});
-
-        return rows;
-    }
-
-    private ArrayList<String[]> getPosiciones(Double d1, Double d2) {
-        ArrayList<String[]> rows = new ArrayList<>();
-        rows.add(new String[]{"1", d1.toString(), d2.toString()});
-
-        return rows;
     }
 
     public void buttonMyPosition() {
