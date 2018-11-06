@@ -21,6 +21,7 @@ import com.itextpdf.text.pdf.PdfWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class TemplatePDF {
 
@@ -71,7 +72,7 @@ public class TemplatePDF {
         document.addAuthor(author);
     }
 
-    public void addTitles(String title, String subTitle, String date) {
+    public void addTitles(String title, String subTitle, Date date) {
         try {
             paragraph = new Paragraph();
             addChildP(new Paragraph(title, fTitle));

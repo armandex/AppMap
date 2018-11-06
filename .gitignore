@@ -5,7 +5,7 @@
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
-google_maps_api.xml
+/app/src/debug/res/values/google_maps_api.xml
 
 .DS_Store
 /build

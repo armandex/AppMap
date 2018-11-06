@@ -5,15 +5,15 @@ import java.util.Date;
 public class Registro {
 
     private int idPersona;
-    private Date fecha;
+    //private Date fecha;
     private double latitud;
     private double longitud;
 
     public void registro(){}
 
-    public Registro(int idPersona, Date fecha, double latitud, double longitud) {
+    public Registro(int idPersona/*, Date fecha*/, double latitud, double longitud) {
         this.idPersona = idPersona;
-        this.fecha = fecha;
+        //this.fecha = fecha;
         this.latitud = latitud;
         this.longitud = longitud;
     }
@@ -26,13 +26,13 @@ public class Registro {
         this.idPersona = idPersona;
     }
 
-    public Date getFecha() {
+    /*public Date getFecha() {
         return fecha;
     }
 
     public void setFecha(Date fecha) {
         this.fecha = fecha;
-    }
+    }*/
 
     public double getLatitud() {
         return latitud;

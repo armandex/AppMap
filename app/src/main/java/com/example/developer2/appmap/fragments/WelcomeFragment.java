@@ -14,6 +14,8 @@ import com.example.developer2.appmap.R;
  */
 public class WelcomeFragment extends Fragment {
 
+    private static final int MY_LOCATION_REQUEST_CODE = 1;
+    int verificarPermisoEnableUbication = 0;
 
     public WelcomeFragment() {
         // Required empty public constructor
@@ -23,9 +25,8 @@ public class WelcomeFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-
         return inflater.inflate(R.layout.fragment_main, container, false);
+
     }
 
 }

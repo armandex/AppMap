@@ -3,9 +3,12 @@ package com.example.developer2.appmap.fragments;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -29,18 +32,18 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.example.developer2.appmap.R;
+import com.example.developer2.appmap.helpers.AdminSQLiteOpenHelper;
+import com.example.developer2.appmap.models.Marcadores;
 import com.example.developer2.appmap.models.Registro;
 import com.example.developer2.appmap.templates.TemplatePDF;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -78,12 +81,12 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
 
-    private List registros;
-    private static Registro registro;
+    private List<Registro> registros;
+    private List<Marcadores> marcadores;
     private Date fecha;
 
-    private static final int UPDATE_INTERVAL = 5000;
-    private static final int FASTEST_INTERVAL = 5000;
+    private static final int UPDATE_INTERVAL = 30000;
+    private static final int FASTEST_INTERVAL = 30000;
     private static final int DISTANCE = 0;
     private static int CONTEO = 0;
     private static int contador = 0;
@@ -92,6 +95,8 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     private String[] header = {"fecha", "latitud", "longitud"};
     private String shortText = "Hola";
     private String longText = "Nunca consideré el estudio como una obligación, sino como una oportunidad";
+    private String titulo = null;
+    private String snipet = null;
     static int count = 1;
 
     public MapFragment() {
@@ -138,7 +143,14 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
             if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
                 buttonMyPosition();
-                gMap.getUiSettings().setMyLocationButtonEnabled(false);//esto bloquea el boton de ir a la posicion actual
+                marcadores = listarMarkadores();
+                for (int i = 0; i < listarMarkadores().size(); i++) {
+                    LatLng posicion = new LatLng(marcadores.get(i).getLatitud(), marcadores.get(i).getLongitud());
+                    titulo = marcadores.get(i).getTitulo();
+                    snipet = marcadores.get(i).getDetalle();
+                    gMap.addMarker(new MarkerOptions().position(posicion).title(titulo).draggable(false).snippet(snipet).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_marker)));
+                }
+                //gMap.getUiSettings().setMyLocationButtonEnabled(false);//esto bloquea el boton de ir a la posicion actual
                 mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_INTERVAL, DISTANCE, new LocationListener() {
 
 
@@ -153,22 +165,24 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                         marker.title("Mi marcador");
                         marker.draggable(true);
                         marker.snippet("Hola soy Armando");
-                        marker.icon(BitmapDescriptorFactory.fromResource(android.R.drawable.star_on));
 
                         gMap.addMarker(marker);
                         //gMap.addMarker(new MarkerOptions().position(place).title("Hola desde OL").draggable(true));
-                        gMap.moveCamera(CameraUpdateFactory.newLatLng(place));
-                        CameraPosition cameraPosition = new CameraPosition.Builder()
-                                .target(place)
-                                .zoom(18)               //limit 21
-                                //.bearing(0)             //0 - 360°
-                                //.tilt(90)               //limit 90
-                                .build();
-                        gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                        //gMap.moveCamera(CameraUpdateFactory.newLatLng(place));
+                        //CameraPosition cameraPosition = new CameraPosition.Builder()
+                        //.target(place)
+                        //.zoom(18)               //limit 21
+                        //.bearing(0)             //0 - 360°
+                        //.tilt(90)               //limit 90
+                        //.build();
+                        //gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                         //gMap.setOnMarkerDragListener((GoogleMap.OnMarkerDragListener) this);
 
-                        Toast.makeText(getContext(), "Fecha: " + fecha + "Lat: " + myLatLng.latitude + " - " + "Lon: " + myLatLng.longitude + "Contador: " + contador, Toast.LENGTH_SHORT).show();
-                        //grabarPosiciones();
+
+                        if (location != null) {
+                            alta(contador, myLatLng.latitude, myLatLng.longitude, fecha);
+                            Toast.makeText(getContext(), "Fecha: " + fecha + "Lat: " + myLatLng.latitude + " - " + "Lon: " + myLatLng.longitude + "Contador: " + contador, Toast.LENGTH_SHORT).show();
+                        }
                         contador++;
                     }
 
@@ -200,6 +214,66 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
 
     }
 
+    public List<Marcadores> listarMarkadores() {
+        List lista = new ArrayList();
+        lista.add(new Marcadores(1, "title_1", "detalle_1", -12.083780124135965, -77.03701986686451));
+        lista.add(new Marcadores(2, "title_2", "detalle_2", -12.084905916031966, -77.03641636983616));
+        lista.add(new Marcadores(3, "title_3", "detalle_3", -12.084785268720983, -77.03559829608662));
+        return lista;
+    }
+
+    public void alta(int idPersona, double latitud, double longitud, Date fecha) {
+        AdminSQLiteOpenHelper admin = new AdminSQLiteOpenHelper(getContext(), "administracion", null, 1);
+
+        SQLiteDatabase bd = admin.getWritableDatabase();
+        int idP = idPersona;
+        double lat = latitud;
+        double lon = longitud;
+        Date fec = fecha;
+        int idGrupo = 1;
+
+        ContentValues registro = new ContentValues();
+
+        registro.put("idPersona", idP);
+        registro.put("latitud", lat);
+        registro.put("longitud", lon);
+        registro.put("fecha", String.valueOf(fec));
+        registro.put("idGrupo", idGrupo);
+
+        // los inserto en la base de datos
+        bd.insert("usuario", null, registro);
+
+        bd.close();
+        Toast.makeText(getContext(), "Datos del usuario cargados", Toast.LENGTH_SHORT).show();
+
+    }
+
+    // Hacemos búsqueda de todos los usuarios
+    public List<String[]> consulta() {
+        registros = new ArrayList();
+        ArrayList<String[]> rows = new ArrayList<>();
+
+        AdminSQLiteOpenHelper admin = new AdminSQLiteOpenHelper(getContext(), "administracion", null, 1);
+
+        SQLiteDatabase bd = admin.getWritableDatabase();
+        Cursor fila = bd.rawQuery("select * from usuario", null);
+        if (fila.getCount() > 0) {
+            Toast.makeText(getContext(), "exito", Toast.LENGTH_SHORT).show();
+            while (fila.moveToNext()){
+                rows.add(new String[]{fila.getString(0),fila.getString(1), fila.getString(2)});
+                //registros.add(new Registro(fila.getInt(0), fila.getDouble(1), fila.getDouble(2)));
+                //Toast.makeText(getContext(), "dato1"+fila.getString(0)+"dato2: "+fila.getString(1)+"dato3:" +fila.getString(2), Toast.LENGTH_SHORT).show();
+            }
+            //if (fila.moveToFirst()) {
+                //registros.add(new Registro(fila.getInt(0), fila.getDouble(1), fila.getDouble(2)));
+
+            //}
+        } else
+            Toast.makeText(getContext(), "error", Toast.LENGTH_SHORT).show();
+        bd.close();
+        return rows;
+    }
+
     public Date calcularFecha(Location location) {
 
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -216,9 +290,9 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
 
         templatePDF = new TemplatePDF(getContext());
         templatePDF.openDocument();
-        templatePDF.addMetaData("Clientes", "Ventas", "Armando Aguinaga");
-        templatePDF.addTitles("Tienda Codeando", "Clientes", "24/10/2018");
-        templatePDF.createTable(header, getClients());
+        templatePDF.addMetaData("Supervisor", "Posiciones", "Armando Aguinaga");
+        templatePDF.addTitles("MyBizControl", "Clientes", fecha);
+        templatePDF.createTable(header, (ArrayList<String[]>) consulta());
         templatePDF.addParagraph(shortText);
         templatePDF.addParagraph(longText);
         templatePDF.closeDocument();
@@ -240,9 +314,9 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         return rows;
     }
 
-    private ArrayList<Registro[]> getPosiciones(Date fecha, Double d1, Double d2) {
-        ArrayList<Registro[]> rows = new ArrayList<>();
-        //rows.add(new Registro[]{Registro,fecha, d1, d2});
+    private ArrayList<String[]> getPosiciones(Double d1, Double d2) {
+        ArrayList<String[]> rows = new ArrayList<>();
+        rows.add(new String[]{"1", d1.toString(), d2.toString()});
 
         return rows;
     }
@@ -253,7 +327,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
             //Con false se genera el efecto de arrastrar la camara hasta la posicion actual
             @Override
             public boolean onMyLocationButtonClick() {
-
+                //Toast.makeText(getContext(), "Click!", Toast.LENGTH_SHORT).show();
                 return false;
             }
         });
@@ -285,7 +359,6 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     }
 
 
-
     private Boolean isGPSEnabled() {
         try {
             int gpsSignal = Settings.Secure.getInt(getActivity().getContentResolver(), Settings.Secure.LOCATION_MODE);
@@ -313,7 +386,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         }else{
 
         }*/
-
+        //consulta();
         grabarPosiciones();
     }
 
@@ -355,7 +428,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                     CONTEO = UPDATE_INTERVAL + contador;
                     contador = UPDATE_INTERVAL;
                     gMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("It's Me!"));
-                    Toast.makeText(getContext(),"C: "+CONTEO+" - "+"Lat: "+location.getLatitude()+"- "+"Lon: "+location.getLongitude(),Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "C: " + CONTEO + " - " + "Lat: " + location.getLatitude() + "- " + "Lon: " + location.getLongitude(), Toast.LENGTH_SHORT).show();
                 }
             });
         }
