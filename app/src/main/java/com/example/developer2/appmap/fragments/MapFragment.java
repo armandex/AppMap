@@ -45,6 +45,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.text.DateFormat;
@@ -59,8 +60,8 @@ import static android.content.Context.LOCATION_SERVICE;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class MapFragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, OnMapReadyCallback, View.OnClickListener,
-        ActivityCompat.OnRequestPermissionsResultCallback, com.google.android.gms.location.LocationListener, GoogleApiClient.OnConnectionFailedListener {
+public class MapFragment extends Fragment implements  OnMapReadyCallback, View.OnClickListener,
+        ActivityCompat.OnRequestPermissionsResultCallback {
 
 
     private View rootView;
@@ -85,7 +86,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     private List<Marcadores> marcadores;
     private Date fecha;
 
-    private static final int UPDATE_INTERVAL = 30000;
+    private static final int UPDATE_INTERVAL = 30000;//1000 = 1 segundo
     private static final int FASTEST_INTERVAL = 30000;
     private static final int DISTANCE = 0;
     private static int CONTEO = 0;
@@ -108,11 +109,8 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         rootView = inflater.inflate(R.layout.fragment_map, container, false);
-
         fab = (FloatingActionButton) rootView.findViewById(R.id.fab);
-
         fab.setOnClickListener(this);
-
         return rootView;
     }
 
@@ -171,6 +169,12 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
             titulo = marcadores.get(i).getTitulo();
             snipet = marcadores.get(i).getDetalle();
             gMap.addMarker(new MarkerOptions().position(posicion).title(titulo).draggable(false).snippet(snipet).icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_marker)));
+            gMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                @Override
+                public void onInfoWindowClick(Marker marker) {
+                    Toast.makeText(getContext(), "soy el detalle: "+snipet,Toast.LENGTH_SHORT).show();
+                }
+            });
         }
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_INTERVAL, DISTANCE, new LocationListener() {
             @Override
@@ -187,8 +191,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                     marker.snippet("Hola soy Armando");
                     //gMap.addMarker(marker);
 
-                    registrarEnSqlite(consulta().size()+1, myLatLng.latitude, myLatLng.longitude, fecha);
-                    Toast.makeText(getContext(), "Fecha: " + fecha + "Lat: " + myLatLng.latitude + " - " + "Lon: " + myLatLng.longitude + "Contador: " + contador, Toast.LENGTH_SHORT).show();
+                    registrarEnSqlite(consulta().size() + 1, myLatLng.latitude, myLatLng.longitude, fecha);
                 }
                 contador++;
             }
@@ -237,10 +240,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
 
         // los inserto en la base de datos
         bd.insert("usuario", null, registro);
-
         bd.close();
-        Toast.makeText(getContext(), "Datos del usuario cargados", Toast.LENGTH_SHORT).show();
-
     }
 
     public List<String[]> consulta() {// Hacemos búsqueda de todos los usuarios-registros
@@ -274,7 +274,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
         return fecha;
     }
 
-    public void grabarPosiciones() {
+    public void grabarPosicionesEnPDF() {
         ActivityCompat.requestPermissions((Activity) getContext(),
                 new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                 MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
@@ -321,17 +321,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                 }).setNegativeButton("CANCEL", null).show();
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-        if (location != null) {
-            //LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-            //gMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-            //gMap.animateCamera(CameraUpdateFactory.zoomTo(11));
-            // we have our desired accuracy of 500 meters so lets quit this service,
-            // onDestroy will be called and stop our location uodates
 
-        }
-    }
 
 
     private Boolean isGPSEnabled() {
@@ -362,7 +352,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
 
         }*/
         //consulta();
-        grabarPosiciones();
+        grabarPosicionesEnPDF();
     }
 
     @Override
@@ -374,52 +364,17 @@ public class MapFragment extends Fragment implements GoogleApiClient.ConnectionC
                     grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                 //gMap.setMyLocationEnabled(true);
-
+                Toast.makeText(getContext(),"linea 377",Toast.LENGTH_SHORT).show();
             } else {
                 // Permission was denied. Display an error message.
+                Toast.makeText(getContext(),"linea 380",Toast.LENGTH_SHORT).show();
             }
         }
+        Toast.makeText(getContext(),"linea 383",Toast.LENGTH_SHORT).show();
     }
 
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        Log.i(TAG, "Connected to GoogleApiClient");
-        if (mCurrentLocation == null) {
-            mLocationRequest = new LocationRequest();
-            mLocationRequest.setInterval(UPDATE_INTERVAL);
-            mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
-            mLocationRequest.setSmallestDisplacement(DISTANCE);
-            mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-            if (ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            gMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
 
 
-                @Override
-                public void onMyLocationChange(Location location) {
-                    // TODO Auto-generated method stub
-                    CONTEO = UPDATE_INTERVAL + contador;
-                    contador = UPDATE_INTERVAL;
-                    gMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("It's Me!"));
-                    Toast.makeText(getContext(), "C: " + CONTEO + " - " + "Lat: " + location.getLatitude() + "- " + "Lon: " + location.getLongitude(), Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
 
-    }
 
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.i(TAG, "Connection suspended");
-        mGoogleApiClient.connect();
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + connectionResult.getErrorCode());
-    }
 }
