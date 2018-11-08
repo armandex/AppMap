@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -124,6 +125,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void changeFragment(Fragment fragment) {
+        //FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+        //if (fragment.isAdded()){
+            //transaction.hide(currentFragment).show(fragment);
+            //Toast.makeText(MainActivity.this,"IF" ,Toast.LENGTH_SHORT ).show();;
+        //}else{
+            //transaction/*.hide(currentFragment)*/.add(R.id.fragment_container, fragment);
+            //Toast.makeText(MainActivity.this,"ELSE" ,Toast.LENGTH_SHORT ).show();;
+        //}
+        //Toast.makeText(MainActivity.this,"AFUERA" ,Toast.LENGTH_SHORT ).show();;
+        //transaction.commit();
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, fragment).commit();
 

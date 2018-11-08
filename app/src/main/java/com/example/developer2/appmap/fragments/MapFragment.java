@@ -25,7 +25,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,10 +35,8 @@ import com.example.developer2.appmap.helpers.AdminSQLiteOpenHelper;
 import com.example.developer2.appmap.models.Marcadores;
 import com.example.developer2.appmap.models.Registro;
 import com.example.developer2.appmap.templates.TemplatePDF;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -113,7 +110,6 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
         fab.setOnClickListener(this);
         return rootView;
     }
-
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -202,7 +198,7 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
             }
 
             @Override
-            public void onProviderEnabled(String provider) {
+            public void onProviderEnabled(String provider){
 
             }
 
@@ -243,11 +239,11 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
         bd.close();
     }
 
-    public List<String[]> consulta() {// Hacemos búsqueda de todos los usuarios-registros
+    public List<String[]> consulta() {// Hacemos búsqueda de todos los registros
         registros = new ArrayList();
         ArrayList<String[]> rows = new ArrayList<>();
 
-        AdminSQLiteOpenHelper admin = new AdminSQLiteOpenHelper(getContext(), "administracion", null, 1);
+        AdminSQLiteOpenHelper admin = new AdminSQLiteOpenHelper(getActivity().getBaseContext(), "administracion", null, 1);
 
         SQLiteDatabase bd = admin.getWritableDatabase();
         Cursor fila = bd.rawQuery("select * from usuario", null);
@@ -274,7 +270,7 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
         return fecha;
     }
 
-    public void grabarPosicionesEnPDF() {
+    public void mostrarRegistrosEnPDF() {
         ActivityCompat.requestPermissions((Activity) getContext(),
                 new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                 MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
@@ -321,8 +317,12 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
                 }).setNegativeButton("CANCEL", null).show();
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
 
-
+        
+        super.onSaveInstanceState(outState);
+    }
 
     private Boolean isGPSEnabled() {
         try {
@@ -352,7 +352,7 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
 
         }*/
         //consulta();
-        grabarPosicionesEnPDF();
+        mostrarRegistrosEnPDF();
     }
 
     @Override
@@ -373,8 +373,27 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
         Toast.makeText(getContext(),"linea 383",Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    public void onPause() {
+        Toast.makeText(getContext(),"On Pause",Toast.LENGTH_SHORT).show();
+        super.onPause();
+    }
 
+    @Override
+    public void onDestroyView() {
+        Toast.makeText(getContext(),"On Destroy View",Toast.LENGTH_SHORT).show();
+        super.onDestroyView();
+    }
 
+    @Override
+    public void onDestroy() {
+        Toast.makeText(getContext(),"On Destroy",Toast.LENGTH_SHORT).show();
+        super.onDestroy();
+    }
 
-
+    @Override
+    public void onResume() {
+        Toast.makeText(getContext(),"On Resume",Toast.LENGTH_SHORT).show();
+        super.onResume();
+    }
 }

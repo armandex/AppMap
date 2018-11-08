@@ -13,7 +13,7 @@ public class AdminSQLiteOpenHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        //aquí creamos la tabla de usuario (dni, nombre, ciudad, numero)
+        //aquí creamos la tabla de usuario (idPersona, lalitud, longitud, fecha, idGrupo)
         db.execSQL("create table usuario(idPersona integer primary key, latitud double, longitud double, fecha date, idGrupo integer)");
     }
 
