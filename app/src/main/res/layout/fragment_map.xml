@@ -1,26 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
     tools:context=".fragments.MapFragment">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:background="#000000"
+        android:orientation="horizontal"
+        android:weightSum="2">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_weight="1">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="41dp"
+                android:id="@+id/txtLista"
+                android:text="LISTA"
+                android:gravity="center_horizontal|center_vertical"
+                android:textColor="#FFFFFF"
+                />
+            <TextView
+                android:id="@+id/linea_izquierda"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="#FFF"/>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_weight="1">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="41dp"
+                android:id="@+id/txtMapa"
+                android:text="MAPA"
+                android:textColor="#FFFFFF"
+                android:gravity="center_horizontal|center_vertical"/>
+            <TextView
+                android:id="@+id/linea_derecha"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="#FFF"/>
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/linearLayoutNoMapa"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="OTRO LAYOUT"
+                android:gravity="center_vertical|center_horizontal"/>
+        </LinearLayout>
 
-    <com.google.android.gms.maps.MapView
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.MapFragment"
-        android:layout_height="match_parent"
-        android:layout_width="match_parent" />
+    </LinearLayout>
+    <FrameLayout
+        android:id="@+id/frameLayoutMapa"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.MapFragment"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"/>
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:backgroundTint="@color/colorAccent"
+            android:src="@android:drawable/ic_menu_compass"
+            app:borderWidth="0dp"/>
+    </FrameLayout>
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:backgroundTint="@color/colorAccent"
-        android:src="@android:drawable/ic_menu_compass"
-        app:borderWidth="0dp"/>
-
-</FrameLayout>
+</LinearLayout>

@@ -18,16 +18,18 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.developer2.appmap.R;
@@ -36,14 +38,20 @@ import com.example.developer2.appmap.models.Marcadores;
 import com.example.developer2.appmap.models.Registro;
 import com.example.developer2.appmap.templates.TemplatePDF;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -57,7 +65,7 @@ import static android.content.Context.LOCATION_SERVICE;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class MapFragment extends Fragment implements  OnMapReadyCallback, View.OnClickListener,
+public class MapFragment extends Fragment implements OnMapReadyCallback, View.OnClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback {
 
 
@@ -78,6 +86,7 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
     private Location mLocation;
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
+    private FusedLocationProviderClient mFusedLocationProviderClient;
 
     private List<Registro> registros;
     private List<Marcadores> marcadores;
@@ -86,6 +95,7 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
     private static final int UPDATE_INTERVAL = 30000;//1000 = 1 segundo
     private static final int FASTEST_INTERVAL = 30000;
     private static final int DISTANCE = 0;
+    private final static String KEY_LOCATION = "location";
     private static int CONTEO = 0;
     private static int contador = 0;
     private static final String TAG = "LocationService";
@@ -95,12 +105,14 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
     private String longText = "Nunca consideré el estudio como una obligación, sino como una oportunidad :D";
     private String titulo = null;
     private String snipet = null;
-    static int count = 1;
+
+    private Fragment map;
+    private LinearLayout no_mapa;
+    private boolean mostrar = true;
 
     public MapFragment() {
         // Required empty public constructor
     }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -109,9 +121,12 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
         fab = (FloatingActionButton) rootView.findViewById(R.id.fab);
         fab.setOnClickListener(this);
         return rootView;
+
+
     }
+
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         mapView = (MapView) rootView.findViewById(R.id.map);
@@ -120,6 +135,35 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
             mapView.onResume();
             mapView.getMapAsync(this);
 
+            TextView btnLista = (TextView) getView().findViewById(R.id.txtLista);
+            final TextView txtlineaI = (TextView) getView().findViewById(R.id.linea_izquierda);
+            TextView btnMapa = (TextView) getView().findViewById(R.id.txtMapa);
+            final TextView txtlineaD = (TextView) getView().findViewById(R.id.linea_derecha);
+            final LinearLayout linearLayoutNoMapa = (LinearLayout) getView().findViewById(R.id.linearLayoutNoMapa);
+
+            txtlineaI.setVisibility(View.VISIBLE);
+            txtlineaD.setVisibility(View.GONE);
+            //linearLayoutNoMapa.setVisibility(View.VISIBLE);
+
+            btnLista.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    txtlineaI.setVisibility(View.VISIBLE);
+                    txtlineaD.setVisibility(View.GONE);
+                    linearLayoutNoMapa.setVisibility(View.VISIBLE);
+                    Toast.makeText(getActivity().getBaseContext(), "Listas", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            btnMapa.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    txtlineaD.setVisibility(View.VISIBLE);
+                    txtlineaI.setVisibility(View.GONE);
+                    linearLayoutNoMapa.setVisibility(View.GONE);
+                    Toast.makeText(getActivity().getBaseContext(), "Mapa", Toast.LENGTH_SHORT).show();
+                }
+            });
 
         }
 
@@ -130,6 +174,27 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
 
         gMap = googleMap;
         mLocationManager = (LocationManager) getContext().getSystemService(LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getContext());
+        try{
+            Task<Location> location = mFusedLocationProviderClient.getLastLocation();
+            location.addOnCompleteListener(new OnCompleteListener<Location>() {
+                @Override
+                public void onComplete( Task<Location> task) {
+                    if (task.isSuccessful()){
+                        Location currentLocation = task.getResult();
+                        LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                        CameraPosition cameraPosition = new CameraPosition.Builder().target(latLng).zoom(15).build();
+                        arrastrarCamara(googleMap, cameraPosition);
+                    }
+                }
+            });
+        }catch (SecurityException ex){
+            //Log.e("getDeviceLocation", "SecurityException "+ex.getMessage());
+        }
+
 
         //Check location permission for sdk >= 23
         if (Build.VERSION.SDK_INT >= 23) {
@@ -137,10 +202,11 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
             if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
                 try {
+
                     buttonMyPosition();
                     administradorDeLocaciones(gMap);
                 } catch (Exception ex) {
-                    Toast.makeText(getContext(), "error" + ex, Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getContext(), "error" + ex, Toast.LENGTH_SHORT).show();
                 }
 
                 //gMap.getUiSettings().setMyLocationButtonEnabled(false);//esto bloquea el boton de ir a la posicion actual
@@ -157,8 +223,10 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
 
     }
 
+    public void arrastrarCamara(GoogleMap googleMap, CameraPosition cameraPosition){
+        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+    }
     public void administradorDeLocaciones(final GoogleMap googleMap) {
-
         marcadores = listarMarkadores();
         for (int i = 0; i < listarMarkadores().size(); i++) {
             LatLng posicion = new LatLng(marcadores.get(i).getLatitud(), marcadores.get(i).getLongitud());
@@ -168,9 +236,19 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
             gMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
                 @Override
                 public void onInfoWindowClick(Marker marker) {
-                    Toast.makeText(getContext(), "soy el detalle: "+snipet,Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "soy el detalle: " + snipet, Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
         }
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_INTERVAL, DISTANCE, new LocationListener() {
             @Override
@@ -198,7 +276,7 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
             }
 
             @Override
-            public void onProviderEnabled(String provider){
+            public void onProviderEnabled(String provider) {
 
             }
 
@@ -293,6 +371,16 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
     }
 
     public void buttonMyPosition() {
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         gMap.setMyLocationEnabled(true);
         gMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
             //Con false se genera el efecto de arrastrar la camara hasta la posicion actual
@@ -320,7 +408,7 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
     @Override
     public void onSaveInstanceState(Bundle outState) {
 
-        
+
         super.onSaveInstanceState(outState);
     }
 
@@ -346,11 +434,12 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
     @Override
     public void onClick(View v) {
 
-        /*if (!this.isGPSEnabled()) {
+       if (!this.isGPSEnabled()) {
             showInfoAlert();
         }else{
 
-        }*/
+        }
+
         //consulta();
         mostrarRegistrosEnPDF();
     }
@@ -364,36 +453,36 @@ public class MapFragment extends Fragment implements  OnMapReadyCallback, View.O
                     grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                 //gMap.setMyLocationEnabled(true);
-                Toast.makeText(getContext(),"linea 377",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "linea 377", Toast.LENGTH_SHORT).show();
             } else {
                 // Permission was denied. Display an error message.
-                Toast.makeText(getContext(),"linea 380",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "linea 380", Toast.LENGTH_SHORT).show();
             }
         }
-        Toast.makeText(getContext(),"linea 383",Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "linea 383", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onPause() {
-        Toast.makeText(getContext(),"On Pause",Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "On Pause", Toast.LENGTH_SHORT).show();
         super.onPause();
     }
 
     @Override
     public void onDestroyView() {
-        Toast.makeText(getContext(),"On Destroy View",Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "On Destroy View", Toast.LENGTH_SHORT).show();
         super.onDestroyView();
     }
 
     @Override
     public void onDestroy() {
-        Toast.makeText(getContext(),"On Destroy",Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "On Destroy", Toast.LENGTH_SHORT).show();
         super.onDestroy();
     }
 
     @Override
     public void onResume() {
-        Toast.makeText(getContext(),"On Resume",Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "On Resume", Toast.LENGTH_SHORT).show();
         super.onResume();
     }
 }

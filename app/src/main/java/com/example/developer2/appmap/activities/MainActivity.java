@@ -6,7 +6,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -54,17 +53,15 @@ public class MainActivity extends AppCompatActivity {
                     //De lo contrario carga la ventana para autorizar el permiso
                     requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_LOCATION_REQUEST_CODE);
                     requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
-
                 }
-
             } else {
                 //Si el permiso ya fue concedido abrimos en intent de contactos
-                currentFragment = new WelcomeFragment();
+                currentFragment = new MapFragment();
                 changeFragment(currentFragment);
             }
 
-        } else {//Si la API es menor a 23 - abrimos en intent de contactos
-            currentFragment = new WelcomeFragment();
+        } else {//Si la API es menor a 23 - abrimos en intent de Bienvenida
+            currentFragment = new MapFragment();
             changeFragment(currentFragment);
             Toast.makeText(this, "activado", Toast.LENGTH_SHORT).show();
         }
@@ -110,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    @Override
+/*    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_welcome:
@@ -122,20 +119,10 @@ public class MainActivity extends AppCompatActivity {
         }
         changeFragment(currentFragment);
         return super.onOptionsItemSelected(item);
-    }
+    }*/
 
     private void changeFragment(Fragment fragment) {
-        //FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 
-        //if (fragment.isAdded()){
-            //transaction.hide(currentFragment).show(fragment);
-            //Toast.makeText(MainActivity.this,"IF" ,Toast.LENGTH_SHORT ).show();;
-        //}else{
-            //transaction/*.hide(currentFragment)*/.add(R.id.fragment_container, fragment);
-            //Toast.makeText(MainActivity.this,"ELSE" ,Toast.LENGTH_SHORT ).show();;
-        //}
-        //Toast.makeText(MainActivity.this,"AFUERA" ,Toast.LENGTH_SHORT ).show();;
-        //transaction.commit();
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, fragment).commit();
 
